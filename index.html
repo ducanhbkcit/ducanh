@@ -1,0 +1,648 @@
+<!-- 
+    =======================================================================================
+    HỆ THỐNG TÁC NGHIỆP ĐỘNG (FINAL PRO) - DATA-DRIVEN ENVIRONMENT
+    TÍCH HỢP FIRESTORE CHO DỮ LIỆU ĐỘNG VÀ TỐI ƯU NGHIỆP VỤ PHÒNG KTXH VÀ VĂN PHÒNG UBND
+    =======================================================================================
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Tác Nghiệp Chuyên Sâu</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1f2937; 
+            background-color: #f5f7fa; 
+            background-image: linear-gradient(to bottom, #f5f7fa 0%, #ffffff 20%); 
+            background-attachment: fixed;
+            scroll-behavior: smooth;
+        }
+        /*  */
+
+        /* BANNER CHÍNH */
+        .header-soft-glow {
+            animation: color-shift 20s ease infinite;
+            background: linear-gradient(135deg, #1D4ED8, #7C3AED, #DB2777, #06B6D4); 
+            background-size: 400% 400%;
+            box-shadow: 0 8px 20px rgba(29, 78, 216, 0.4);
+        }
+        @keyframes color-shift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        
+        /* BANNER KẾ HOẠCH */
+        #data-cleaning-banner {
+            animation: plan-color-shift 10s ease infinite;
+            background: linear-gradient(90deg, #F97316, #EF4444, #8B5CF6);
+            background-size: 300% 100%;
+        }
+        @keyframes plan-color-shift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+        /* TIÊU ĐỀ CỐ ĐỊNH */
+        #sticky-header {
+            position: sticky; top: 0; z-index: 50; background-color: #1d4ed8; color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* NÚT TTHC */
+        .tthc-button {
+            height: 80px; transition: all 0.2s; word-break: break-word; white-space: normal;
+            background-color: #f8fafc; border: 1px solid #d1d5db; color: #1f2937;
+        }
+        .tthc-button.selected {
+            background-color: #1D4ED8; color: white; font-weight: 700; box-shadow: 0 4px 10px rgba(29, 78, 216, 0.6);
+        }
+        
+        /* KHUNG PROMPT */
+        #generated-prompt-output {
+            background-color: #f9fafb; border: 1px dashed #9ca3af; cursor: pointer; 
+        }
+
+        /* Nút KẾT NỐI MINI AI */
+        .notebook-button {
+            background-color: #4F46E5; color: white; font-weight: 700;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12">
+
+    <!-- BANNER TOP -->
+    <header class="header-soft-glow rounded-xl mb-6 text-center">
+        <h1 class="text-4xl font-extrabold title-soft-glow text-white tracking-wider">
+            BỘ CÔNG CỤ TÁC NGHIỆP TTHC ĐẤT ĐAI CẤP XÃ
+        </h1>
+        <p class="text-sm mt-2 text-white/90">
+            Nội dung được xây dựng dựa trên cấu trúc dữ liệu và Hệ thống AI Suy luận Pháp lý của Đức Anh
+        </p>
+    </header>
+
+    <!-- BANNER KẾ HOẠCH MỚI -->
+    <a href="https://chatgpt.com/share/68f0f670-d124-800b-b5dc-dc6284c57cdf" target="_blank" class="w-full block mb-10">
+        <div id="data-cleaning-banner" class="text-white text-center py-4 px-6 rounded-xl text-xl md:text-2xl tracking-wide">
+            Kế hoạch làm sạch Dữ liệu đất đai (90 Ngày)
+        </div>
+    </a>
+
+
+    <!-- TIÊU ĐỀ CUỘN CỐ ĐỊNH -->
+    <div id="sticky-header" class="hidden">
+        <p class="text-sm font-semibold">
+            Nội dung được xây dựng dựa trên cấu trúc dữ liệu và Hệ thống AI Suy luận Pháp lý của Đức Anh (ducanh.bkcit) xây dựng và hoàn thiện
+        </p>
+    </div>
+
+    <!-- CONTAINER CHÍNH -->
+    <div class="max-w-7xl mx-auto space-y-10">
+
+        <!-- BƯỚC 1: CHỌN TTHC -->
+        <div class="custom-card p-8 rounded-xl">
+            <h2 class="text-2xl font-bold mb-5 text-center text-gray-700">
+                Bước 1: Chọn Thủ tục Hành chính (Context Pháp lý)
+            </h2>
+            <div id="loading-tthc" class="text-center text-gray-500">Đang tải danh mục TTHC từ cơ sở dữ liệu...</div>
+            <div id="tthc-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                <!-- Dữ liệu TTHC được chèn bằng JS từ Firestore -->
+            </div>
+        </div>
+
+        <!-- BƯỚC 2: CHỌN HÀNH ĐỘNG CHỨC NĂNG (Bổ sung nghiệp vụ Văn phòng & KTXH) -->
+        <div class="custom-card p-8 rounded-xl">
+            <h2 class="text-2xl font-bold mb-5 text-center text-gray-700">
+                Bước 2: Chọn Hành động Chức năng (Loại Tài liệu/Phân tích)
+            </h2>
+
+            <div id="action-list" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                <button data-action="Trình tự Thủ tục" class="func-button bg-blue-500 text-white py-3 px-2 rounded-lg" onclick="selectAction('Trình tự Thủ tục')">Trình tự Thủ tục</button>
+                <button data-action="Hồ sơ, Giấy tờ" class="func-button bg-cyan-500 text-white py-3 px-2 rounded-lg" onclick="selectAction('Hồ sơ, Giấy tờ')">Hồ sơ, Giấy tờ</button>
+                <button data-action="Công văn" class="func-button bg-green-500 text-white py-3 px-2 rounded-lg" onclick="selectAction('Công văn')">Công văn</button>
+                <button data-action="Tờ trình" class="func-button bg-yellow-500 text-gray-800 py-3 px-2 rounded-lg" onclick="selectAction('Tờ trình')">Tờ trình</button>
+                <button data-action="Báo cáo" class="func-button bg-red-500 text-white py-3 px-2 rounded-lg" onclick="selectAction('Báo cáo')">Báo cáo</button>
+                <button data-action="Dự thảo Quyết định" class="func-button bg-purple-500 text-white py-3 px-2 rounded-lg" onclick="selectAction('Dự thảo Quyết định')">Dự thảo Quyết định</button>
+                <button data-action="Rà soát Pháp lý" class="func-button bg-gray-600 text-white py-3 px-2 rounded-lg" onclick="selectAction('Rà soát Pháp lý')">Rà soát Pháp lý</button>
+            </div>
+        </div>
+
+        <!-- BƯỚC 3: NHẬP YÊU CẦU TÙY BIẾN -->
+        <div class="custom-card p-8 rounded-xl">
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-700">
+                Bước 3: Nhập Yêu cầu Tùy biến (Chi tiết công việc)
+            </h2>
+            
+            <textarea id="user-query-input" rows="2" placeholder="NHẬP YÊU CẦU CÔNG VIỆC... (Ví dụ: Đề xuất trình ký gấp, lưu trữ bản nháp trên Google Drive cá nhân, và gửi email phản hồi cho người dân.)"
+                      class="w-full p-4 text-base bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 resize-none shadow-inner"></textarea>
+            
+            <div class="mt-5 flex justify-center space-x-4">
+                <button id="execute-button" 
+                        class="execute-button text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center disabled:opacity-50"
+                        onclick="this.classList.add('clicked'); setTimeout(() => this.classList.remove('clicked'), 1000);"
+                >
+                    <span id="button-text">XÂY DỰNG CÂU LỆNH</span>
+                    <div id="loading-spinner" class="spinner ml-3 hidden"></div>
+                </button>
+
+                <!-- NÚT HÀNH ĐỘNG ĐÓNG GÓI -->
+                <button id="action-button-notebooklm" 
+                        class="notebook-button py-3 px-6 rounded-lg text-lg flex items-center" 
+                        onclick="packageAndExecute()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-7-9a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm14 0a1 1 0 110 2h-6a1 1 0 110-2h6z" clip-rule="evenodd" />
+                    </svg>
+                    KẾT NỐI MINI AI DUCANH.BKCIT
+                </button>
+            </div>
+
+            <!-- THÊM FILE DỮ LIỆU NGUỒN -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h3 class="text-lg font-bold text-gray-600 mb-3 text-center">
+                    Tích hợp Dữ liệu Nguồn Chuyên sâu
+                </h3>
+                <div class="mt-4 flex flex-wrap justify-center gap-4">
+                    <button id="btnAddFile" class="notebook-button bg-green-600 hover:bg-green-700 py-2 px-6 rounded-lg text-base flex items-center" onclick="alert('Mô phỏng: Tính năng này yêu cầu môi trường Backend để mở Drive Picker. Trong môi trường thực tế, Anh sẽ chọn file từ Google Drive để bổ sung nguồn cho NotebookLM.')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M5.5 10a.5.5 0 01.5-.5h4a.5.5 0 010 1H6a.5.5 0 01-.5-.5z" />
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm2 1h4V3H5v1zm1 7a1 1 0 011-1h5a1 1 0 011 1v5a1 1 0 01-1 1H7a1 1 0 01-1-1v-5zm2 1h4v4H8v-4z" clip-rule="evenodd" />
+                        </svg>
+                        THÊM FILE DỮ LIỆU NGUỒN
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- KHUNG KẾT QUẢ PROMPT TỐI ƯU (ĐỘNG) -->
+        <div class="custom-card p-8 rounded-xl">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-2xl font-bold text-gray-700">
+                    Câu lệnh được tối ưu hóa:
+                    <span id="selected-tthc-name" class="text-blue-600 font-extrabold ml-2"></span>
+                </h2>
+                <button id="copy-button" class="bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-200 transition duration-150 ease-in-out hidden" onclick="copyPromptToClipboard()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-2m-4-4l-4-4m0 0l-4 4m4-4V3" />
+                    </svg>
+                    <span id="copy-text">COPY CÂU LỆNH TỐI ƯU</span>
+                </button>
+            </div>
+            
+            <div id="result-container">
+                <!-- Thêm id cho div wrapper để bôi đen -->
+                <div id="generated-prompt-output" 
+                     class="text-gray-700 whitespace-pre-wrap text-sm max-h-[36rem] overflow-hidden shadow-inner cursor-pointer"
+                     onclick="selectText(this.id)">
+                    <p class="text-center text-gray-500 italic">
+                        Vui lòng hoàn thành đủ 3 bước để **XÂY DỰNG CÂU LỆNH** chuyên sâu...
+                    </p>
+                </div>
+                <div id="data-status" class="mt-4 text-xs text-center text-red-600"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MINI-CHECKLIST CUỐI TRANG -->
+    <div class="max-w-7xl mx-auto mt-12 pt-6 border-t border-gray-300">
+        <h3 class="text-xl font-bold text-red-600 mb-4">📌 Mini-checklist Tự kiểm tra Prompt</h3>
+        <ul class="space-y-3 text-sm text-gray-700 list-disc list-inside">
+            <li class="p-3 bg-white border border-gray-200 rounded-md shadow-sm flex items-start">
+                <span class="text-green-600 font-extrabold mr-2">✅</span> 
+                **Trích dẫn đủ Điều/Khoản/Điểm?** (Yêu cầu AI phải nêu rõ)
+            </li>
+            <li class="p-3 bg-white border border-gray-200 rounded-md shadow-sm flex items-start">
+                <span class="text-green-600 font-extrabold mr-2">✅</span> 
+                **Chuẩn thể thức NĐ30/2020?** (Yêu cầu AI áp dụng)
+            </li>
+            <li class="p-3 bg-white border border-gray-200 rounded-md shadow-sm flex items-start">
+                <span class="text-green-600 font-extrabold mr-2">✅</span> 
+                **Ưu tiên VB mới nhất (ghi rõ VB thay thế)?** (Cơ chế Suy luận Pháp lý đã tích hợp)
+            </li>
+            <li class="p-3 bg-white border border-gray-200 rounded-md shadow-sm flex items-start">
+                <span class="text-green-600 font-extrabold mr-2">✅</span> 
+                **Có checklist trích dẫn + tóm tắt pháp lý?** (Yêu cầu định dạng đầu ra)
+            </li>
+            <li class="p-3 bg-red-100 border border-red-300 rounded-md shadow-sm text-red-700 font-bold flex items-start">
+                <span class="text-red-700 font-extrabold mr-2">⚠️</span> 
+                **Đảm bảo dữ liệu an toàn thông tin mạng và Quy định về dữ liệu "Mật"?** (Kiểm tra lại nội dung trước khi dán vào AI)
+            </li>
+        </ul>
+        <p class="mt-8 text-sm text-gray-500 text-center">
+            Product by ducanh.bkcit<br>
+            0901951525
+        </p>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db = null;
+        let auth = null;
+        let userId = null;
+        let tthcData = [];
+
+        const NOTEBOOK_ID = '5cdbc2b5-c953-4d2c-a8f9-3676e0d55dfc'; 
+        const NOTEBOOK_URL = `https://notebooklm.google.com/notebook/${NOTEBOOK_ID}`;
+        
+        let lastGeneratedRawPrompt = "";
+        let selectedTthc = "";
+        let selectedAction = "";
+
+        // Nguồn tri thức bổ sung (NGẦM HIỂU)
+        const newKnowledgeSources = [
+            "https://docs.google.com/document/d/1GXxouhNvUonOyQ-QuJUJkxjn-rQ_ec3OvMZL19Xc868/edit",
+            "https://docs.google.com/document/d/1O8NdQF1ztMC5yVYak3rWCbYIvlSj4m85gr1jTfxF6Xc/edit"
+        ];
+        
+        const primaryLegalTags = `
+        **QUY TẮC PHÁP LÝ**: ƯU TIÊN SỬ DỤNG VĂN BẢN HỢP NHẤT (NĐ 151 và NĐ 226/2025/NĐ-CP). Áp dụng các Thông tư mới của Bộ Xây dựng (10/2025), Bộ NNNMT (19/2025), Bộ Công Thương (37/2025) và Luật TCCQĐP 72/2025/QH15. Nếu có mâu thuẫn, áp dụng Luật chuyên ngành (Luật Đất đai 2024). KHÔNG sử dụng hoặc trích dẫn dữ liệu Mật.
+        `;
+
+        // 7 PROMPT CHỨC NĂNG CỐT LÕI (Đã tích hợp Logic KTXH và VPUBND)
+        const functionalPrompts = {
+            "Trình tự Thủ tục": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã, đang cần rà soát quy trình để hướng dẫn người dân cho thủ tục [${yeuCau.trim()}].
+# (YÊU CẦU): Hãy trình bày tổng quan và chi tiết **Trình tự Thủ tục** thực hiện theo văn bản hợp nhất.
+# (CÁC BƯỚC): 1. Xác định đúng thủ tục. 2. Liệt kê các bước thực hiện tuần tự. 3. Với mỗi bước, nêu rõ cơ quan chủ trì, cơ quan phối hợp, và kết quả đầu ra.
+# (MỤC TIÊU CUỐI CÙNG): Xuất **Sơ đồ quy trình** (dạng văn bản) và **Checklist các mốc thời gian**. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠN & RÀNG BUỘC): ${primaryLegalTags}
+`,
+            "Hồ sơ, Giấy tờ": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã, đang cần chuẩn bị bộ hồ sơ hoàn chỉnh cho thủ tục [${yeuCau.trim()}].
+# (YÊU CẦU): Hãy liệt kê chi tiết **Hồ sơ, Giấy tờ** cần thiết để nộp. Lưu ý các giấy tờ cần được **công chứng/chứng thực** (nếu có).
+# (CÁC BƯỚC): 1. Xác định thành phần hồ sơ theo Nghị định 226/2025/NĐ-CP. 2. Phân loại giấy tờ: bắt buộc, thay thế (nếu có), và giấy tờ phải công chứng.
+# (MỤC TIÊU CUỐI CÙNG): Xuất **Bảng kê Hồ sơ** dưới dạng Checklist, có ghi chú rõ ràng về các **Biểu Mẫu** cần điền. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠT & RÀNG BUỘC): ${primaryLegalTags}
+`,
+            "Công văn": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã/Văn phòng UBND xã, đang soạn Công văn gấp.
+# (YÊU CẦU): Soạn Công văn [Trích yếu: ${yeuCau.trim()}] gửi [Đơn vị/Cấp có thẩm quyền]. Nội dung phải chứa thông tin được cung cấp trong yêu cầu.
+# (CÁC BƯỚC): 1. Phân tích yêu cầu và xác định căn cứ pháp lý liên quan. 2. Soạn nội dung theo cấu trúc hành chính. 3. Thêm bảng căn cứ pháp lý.
+# (MỤC TIÊU CUỐI CÙNG): Xuất Công văn chuẩn **Nghị định 30/2020/NĐ-CP** (về thể thức) + Bảng căn cứ chi tiết + **Checklist Pháp lý**. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠN & RÀNG BUỘC): ${primaryLegalTags}
+`,
+            "Tờ trình": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã/Văn phòng UBND xã, đang lập Tờ trình để trình cấp trên.
+# (YÊU CẦU): Soạn Tờ trình về [Nội dung: ${yeuCau.trim()}]. Trình [UBND cấp xã/huyện]. Tờ trình phải chứa thông tin được cung cấp trong yêu cầu.
+# (CÁC BƯỚC): 1. Xác định thẩm quyền giải quyết. 2. Tra cứu căn cứ pháp lý mới nhất. 3. Xây dựng Tờ trình theo thể thức hành chính, tập trung vào tính thuyết phục.
+# (MỤC TIÊU CUỐI CÙNG): Xuất Tờ trình chuẩn **Nghị định 30/2020/NĐ-CP** + Checklist các điểm cần điền chi tiết. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠN & RÀNG BUỘC): ${primaryLegalTags}
+`,
+            "Báo cáo": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã/Văn phòng UBND xã, đang soạn Báo cáo định kỳ/đột xuất.
+# (YÊU CẦU): Soạn Báo cáo về [Tiến độ/Kinh tế-Xã hội]: ${yeuCau.trim()}. Nội dung Báo cáo phải phản ánh tình hình giải quyết công việc.
+# (CÁC BƯỚC): 1. Xác định các chỉ tiêu liên quan. 2. Trích đúng Điều/Khoản/Điểm từ VB mới nhất. 3. Đề xuất giải pháp.
+# (MỤC TIÊU CUỐI CÙNG): Xuất Báo cáo chuẩn thể thức hành chính, kèm theo **Bảng tổng hợp số liệu** và **Danh mục Vướng mắc/Kiến nghị** có trích dẫn pháp lý. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠN & RÀNG BUỘC): ${primaryLegalTags}
+`,
+            "Dự thảo Quyết định": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã/Văn phòng UBND xã, đang lập Dự thảo Quyết định để trình Chủ tịch UBND xã.
+# (YÊU CẦU): Lập Dự thảo Quyết định về [Nội dung: ${yeuCau.trim()}]. Quyết định phải có đầy đủ các yếu tố: Căn cứ pháp lý, Xét đề nghị, Quyết định và Điều khoản thi hành.
+# (CÁC BƯỚC): 1. Xác định đúng thẩm quyền ban hành Quyết định (theo NĐ 151/226). 2. Xây dựng Căn cứ Pháp lý (Luật Đất đai 2024, NĐ hợp nhất, QĐ 58/2024/QĐ-UBND tỉnh Đồng Nai...). 3. Soạn thảo các Điều khoản cụ thể.
+# (MỤC TIÊU CUỐI CÙNG): Xuất Dự thảo Quyết định chuẩn **Nghị định 30/2020/NĐ-CP** + **Bảng Kiểm tra Nguồn Pháp lý** để tôi thẩm định. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠN & RÀNG BUỘC): ${primaryLegalTags}
+`,
+            "Rà soát Pháp lý": (yeuCau, m4Action) => `
+# (VAI TRÒ): Tôi, Chuyên viên Phòng Kinh tế xã/Văn phòng UBND xã, đang thực hiện rà soát pháp lý chuyên sâu.
+# (YÊU CẦU): Thực hiện Rà soát pháp lý cho [Văn bản/Hồ sơ/Yêu cầu: ${yeuCau.trim()}].
+# (CÁC BƯỚC): 1. Phân tích nội dung và đối chiếu từng điều khoản với Luật Đất đai 2024 và **VĂN BẢN HỢP NHẤT NĐ 151 và NĐ 226/2025/NĐ-CP**. 2. Kiểm tra tính hiệu lực của từng căn cứ pháp lý được trích dẫn. 3. Đề xuất hành động.
+# (MỤC TIÊU CUỐI CÙNG): Xuất: (A) **Bảng Kiểm Pháp Lý**. (B) **Đề xuất sửa đổi chi tiết**. (C) Nếu vượt thẩm quyền → ghi rõ **“CHUYỂN PHÒNG PHÁP CHẾ”**. Bắt buộc thực hiện **${m4Action}** sau khi soạn thảo.
+# (GIỚI HẠN & RÀNG BUỘC): ${primaryLegalTags}
+`,
+        };
+        
+        // FIREBASE INITIALIZATION AND DATA FETCHING
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Sign in anonymously if no token is available, otherwise use custom token (for Canvas)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                userId = auth.currentUser?.uid || 'anonymous';
+                
+                fetchTthcData();
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                document.getElementById('data-status').textContent = '⚠️ Lỗi kết nối CSDL (Firestore). Dữ liệu tĩnh sẽ được sử dụng.';
+                useStaticDataFallback();
+            }
+        }
+
+        function fetchTthcData() {
+            const tthcCollectionPath = `/artifacts/${appId}/public/data/tthc_list`;
+            const q = query(collection(db, tthcCollectionPath));
+
+            document.getElementById('loading-tthc').textContent = 'Đang đồng bộ dữ liệu TTHC...';
+            
+            onSnapshot(q, (snapshot) => {
+                tthcData = [];
+                snapshot.forEach((doc) => {
+                    tthcData.push(doc.data());
+                });
+
+                if (tthcData.length === 0) {
+                     document.getElementById('loading-tthc').textContent = '⚠️ Không tìm thấy dữ liệu TTHC trong CSDL. Vui lòng thêm dữ liệu.';
+                } else {
+                     document.getElementById('loading-tthc').textContent = `Đã đồng bộ ${tthcData.length} thủ tục hành chính.`;
+                }
+                renderTthcList();
+            }, (error) => {
+                console.error("Lỗi đồng bộ Firestore:", error);
+                document.getElementById('data-status').textContent = '⚠️ Lỗi đồng bộ Firestore. Dữ liệu tĩnh sẽ được sử dụng.';
+                useStaticDataFallback();
+            });
+        }
+        
+        // STATIC FALLBACK DATA (For local running or connection error)
+        function useStaticDataFallback() {
+             const staticList = [
+                "1.013949 - Giao đất, cho thuê đất, chuyển mục đích sử dụng đất",
+                "1.012819 - Bồi thường, hỗ trợ khi Nhà nước thu hồi đất",
+                "1.013959 - Đăng ký biến động do thay đổi thông tin",
+                "1.013975 - Hòa giải tranh chấp đất đai tại UBND cấp xã",
+                "1.012821 - Tặng cho QSDĐ vì mục đích giao thông, công cộng",
+            ];
+             tthcData = staticList.map(item => {
+                const [maSo, tenThuTuc] = item.split(" - ");
+                return { maSo, tenThuTuc };
+            });
+            renderTthcList();
+        }
+
+        function determineM4Action(query) {
+            const lowerQuery = query.toLowerCase();
+            let action = "kiểm tra lại nội dung";
+
+            if (lowerQuery.includes('google drive') || lowerQuery.includes('drive')) { action = "Lưu trữ bản nháp trên Google Drive cá nhân"; } 
+            else if (lowerQuery.includes('google docs') || lowerQuery.includes('docs') || lowerQuery.includes('đồng bộ')) { action = "Lưu trữ bản nháp trên Docs để chỉnh sửa đồng bộ với đồng nghiệp"; } 
+            else if (lowerQuery.includes('trình ký')) { action = "Chuẩn bị để trình ký ngay lập tức"; } 
+            else if (lowerQuery.includes('email') || lowerQuery.includes('gửi mail')) { action = "Gửi bản nháp qua email cho Phòng ban liên quan để lấy ý kiến"; } 
+            else if (lowerQuery.includes('chia sẻ')) { action = "Lưu trữ trên Docs và chia sẻ ngay với người yêu cầu"; } 
+            else if (lowerQuery.includes('lưu trữ') && lowerQuery.includes('chia sẻ')) { action = "Lưu trữ và chia sẻ ngay lập tức theo yêu cầu đã nêu"; }
+            
+            if (action === "kiểm tra lại nội dung" && query.length > 30) { action = "kiểm tra lại nội dung trước khi ban hành"; }
+            
+            return action;
+        }
+
+
+        function renderTthcList() {
+            const listContainer = document.getElementById('tthc-list');
+            listContainer.innerHTML = tthcData.map((item) => `
+                <button 
+                    data-tthc-name="${item.tenThuTuc}"
+                    class="tthc-button text-xs py-2 px-3 rounded-lg transition duration-150 ease-in-out border"
+                    onclick="selectTthc('${item.tenThuTuc.replace(/'/g, "\\'")}')"
+                >
+                    ${item.tenThuTuc}
+                </button>
+            `).join('');
+        }
+
+        function selectTthc(tthcName) {
+            selectedTthc = tthcName;
+            
+            document.querySelectorAll('.tthc-button').forEach(btn => {
+                if (btn.getAttribute('data-tthc-name') === tthcName) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+            updateDisplayTitle(); 
+        }
+
+        function selectAction(actionName) {
+            selectedAction = actionName;
+            document.querySelectorAll('.func-button').forEach(btn => {
+                if (btn.getAttribute('data-action') === actionName) {
+                    btn.classList.add('selected');
+                    btn.style.borderColor = btn.style.backgroundColor;
+                } else {
+                    btn.classList.remove('selected');
+                    btn.style.borderColor = '#e5e7eb'; 
+                }
+            });
+            updateDisplayTitle();
+        }
+        
+        function updateDisplayTitle() {
+            const tthcDisplay = selectedTthc ? `${selectedTthc}` : `[Chưa chọn TTHC]`;
+            const actionDisplay = selectedAction ? ` | Hành động: ${selectedAction}` : ``;
+            document.getElementById('selected-tthc-name').innerHTML = `<span class="text-blue-600 font-extrabold">${tthcDisplay}</span>${actionDisplay}`;
+        }
+
+
+        /**
+         * Hàm Phân loại yêu cầu người dùng và Sinh Prompt Tối Ưu
+         */
+        async function generateOptimizedPrompt() {
+            const yeuCauGoc = document.getElementById('user-query-input').value.trim();
+            const resultContainer = document.getElementById('generated-prompt-output');
+            const copyButton = document.getElementById('copy-button');
+            const button = document.getElementById('execute-button');
+            const buttonText = document.getElementById('button-text');
+            const spinner = document.getElementById('loading-spinner');
+
+            // --- KIỂM TRA ĐIỀU KIỆN TỐI THIỂU ---
+            const minConditionMet = selectedAction || selectedTthc || yeuCauGoc;
+            
+            if (!minConditionMet) {
+                resultContainer.innerHTML = '<p class="text-center text-red-600 italic">⚠️ Vui lòng cung cấp ít nhất một đầu vào (TTHC, Hành động, hoặc Yêu cầu) để xây dựng câu lệnh!</p>';
+                copyButton.classList.add('hidden');
+                return;
+            }
+
+            // Tắt nút và hiển thị loading
+            button.disabled = true;
+            buttonText.textContent = 'ĐANG XỬ LÝ DỮ LIỆU...';
+            spinner.classList.remove('hidden');
+            
+            // --- 1. XỬ LÝ ĐẦU VÀO VÀ XÂY DỰNG CONTEXT ---
+            
+            let promptType = selectedAction;
+            if (!promptType && yeuCauGoc) {
+                 promptType = yeuCauGoc.toLowerCase().includes('công văn') ? 'Công văn' : 
+                              yeuCauGoc.toLowerCase().includes('tờ trình') ? 'Tờ trình' : 
+                              yeuCauGoc.toLowerCase().includes('báo cáo') ? 'Báo cáo' :
+                              'Rà soát Pháp lý'; 
+            } else if (!promptType) {
+                 promptType = 'Trình tự Thủ tục'; 
+            }
+
+            const generatorFunction = functionalPrompts[promptType];
+            const m4Action = determineM4Action(yeuCauGoc);
+
+            let finalYeuCau = yeuCauGoc;
+            const tthcTag = selectedTthc ? `[TTHC: ${selectedTthc}]` : '';
+            
+            if (selectedTthc && !yeuCauGoc.includes(selectedTthc)) {
+                 finalYeuCau = `${tthcTag} - ${yeuCauGoc}`;
+            } else if (selectedTthc && yeuCauGoc.trim() === '') {
+                 finalYeuCau = `${tthcTag}`;
+            }
+
+            const generatedPrompt = generatorFunction(finalYeuCau.trim(), m4Action); 
+            
+            // LƯU PROMPT GỐC (NỘI DUNG PROMPT + CHỈ THỊ NGẦM)
+            let rawPromptContent = generatedPrompt.replace(/\n/g, '\n').replace(/<br>/g, '\n').replace(/<span.*?>(.*?)<\/span>/g, '$1').replace(/\*\*(.*?)\*\*/g, '**$1**').trim(); 
+            
+            // Thêm CHỈ THỊ NGẦM NGUỒN TƯ DUY NỘI BỘ (Chỉ cho AI đọc, không cho người dùng copy)
+            rawPromptContent += `\n\n**NGUỒN TƯ DUY NỘI BỘ BẮT BUỘC**: Tham khảo các file đã tải lên và các nguồn: ${newKnowledgeSources.join('; ')}`;
+            
+            lastGeneratedRawPrompt = rawPromptContent;
+
+
+            // --- 2. HIỂN THỊ KẾT QUẢ ---
+            
+            const formattedPrompt = formatPromptForDisplay(generatedPrompt);
+            
+            resultContainer.innerHTML = formattedPrompt;
+
+            // Cập nhật tiêu đề lần cuối và hiện nút Copy
+            document.getElementById('selected-tthc-name').innerHTML = `<span class="text-blue-600 font-extrabold">${selectedTthc || '[Không chọn TTHC]'}</span> | Hành động: ${promptType}`;
+            copyButton.classList.remove('hidden');
+
+            // Khôi phục nút
+            button.disabled = false;
+            buttonText.textContent = 'XÂY DỰNG CÂU LỆNH';
+            spinner.classList.add('hidden');
+        }
+
+        /**
+         * Hàm sao chép Prompt gốc vào Clipboard
+         */
+        function copyPromptToClipboard() {
+            const textToCopy = lastGeneratedRawPrompt;
+            
+            if (!textToCopy || textToCopy.includes('Vui lòng hoàn thành đủ 3 bước')) {
+                alert('Chưa có câu lệnh hợp lệ để sao chép!');
+                return;
+            }
+
+            // Loại bỏ dòng NGUỒN TƯ DUY NỘI BỘ khi copy ra ngoài
+            const finalCopyText = textToCopy.replace(/\n\n\*\*NGUỒN TƯ DUY NỘI BỘ BẮT BUỘC\*\*:(.|\n)*$/g, '').trim();
+
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = finalCopyText;
+            tempTextArea.style.position = 'fixed'; 
+            tempTextArea.style.left = '-9999px';
+            tempTextArea.style.top = '0';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyTextElement = document.getElementById('copy-text');
+            copyTextElement.textContent = 'ĐÃ SAO CHÉP!';
+            setTimeout(() => {
+                copyTextElement.textContent = 'COPY CÂU LỆNH TỐI ƯU';
+            }, 1500);
+            return finalCopyText; // Trả về nội dung đã copy để sử dụng cho chức năng đóng gói
+        }
+        window.copyPromptToClipboard = copyPromptToClipboard; 
+
+        /**
+         * HÀM HÀNH ĐỘNG ĐÓNG GÓI CHUYÊN SÂU
+         */
+        function packageAndExecute() {
+            // 1. CHẮC CHẮN PROMPT ĐÃ ĐƯỢC SINH RA
+            if (!lastGeneratedRawPrompt || lastGeneratedRawPrompt.includes('Vui lòng hoàn thành đủ 3 bước')) {
+                generateOptimizedPrompt(); // Cố gắng sinh prompt nếu chưa có
+                if (!lastGeneratedRawPrompt || lastGeneratedRawPrompt.includes('Vui lòng hoàn thành đủ 3 bước')) {
+                     alert('⚠️ Vui lòng hoàn thành ít nhất 1 bước đầu vào trước khi kết nối MINI AI.');
+                     return;
+                }
+            }
+
+            // 2. TỰ ĐỘNG COPY LỆNH TỐI ƯU (đã loại bỏ chỉ thị ngầm)
+            const copiedPrompt = copyPromptToClipboard();
+
+            // 3. MỞ NOTEBOOKLM VÀ YÊU CẦU THỰC THI (thông báo hướng dẫn)
+            window.open(NOTEBOOK_URL, '_blank');
+            
+            // 4. THÔNG BÁO THỰC THI CHUYÊN NGHIỆP
+            alert(`✅ ĐÃ SAO CHÉP CÂU LỆNH TỐI ƯU THÀNH CÔNG!\n\nMINI AI đã mở NotebookLM của Anh Đức Anh (Link: ${NOTEBOOK_URL}).\n\nBước cuối cùng: Vui lòng chuyển sang tab NotebookLM vừa mở và **DÁN (Ctrl+V)** câu lệnh vào Chatbox để AI thực thi ngay lập tức.`);
+        }
+        window.packageAndExecute = packageAndExecute;
+
+
+        // Hàm bôi đen nội dung khi click vào khung kết quả
+        function selectText(containerid) {
+            const container = document.getElementById(containerid);
+            if (!container || !lastGeneratedRawPrompt) return; 
+
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(container);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        window.selectText = selectText;
+
+
+        // Định dạng Prompt đầu ra để hiển thị màu sắc và xuống dòng trong HTML
+        function formatPromptForDisplay(promptText) {
+            let htmlContent = promptText.replace(/\n/g, '<br>');
+
+            const tags = ['#(VAI TRÒ)', '#(YÊU CẦU)', '#(CÁC BƯỚC)', '#(MỤC TIÊU CUỐI CÙNG)', '#(GIỚI HẠN & RÀNG BUỘC)'];
+            tags.forEach(tag => {
+                const regex = new RegExp(tag.replace('(', '\\(').replace(')', '\\)'), 'g');
+                htmlContent = htmlContent.replace(regex, `<span class="text-blue-600 font-bold">${tag}</span>`); 
+            });
+
+            htmlContent = htmlContent.replace(/\[(.*?)\]/g, (match, p1) => 
+                `<span class="text-red-500 font-bold">[${p1}]</span>`
+            );
+            
+            htmlContent = htmlContent.replace(/Nghị định 30\/2020\/NĐ-CP/g, `<span class="text-green-600 font-bold">Nghị định 30/2020/NĐ-CP</span>`);
+            htmlContent = htmlContent.replace(/Luật Đất đai 2024/g, `<span class="text-green-600 font-bold">Luật Đất đai 2024</span>`);
+            htmlContent = htmlContent.replace(/VĂN BẢN HỢP NHẤT NĐ 151 và NĐ 226\/2025\/NĐ-CP/g, `<span class="text-purple-600 font-extrabold">VĂN BẢN HỢP NHẤT NĐ 151 và NĐ 226/2025/NĐ-CP</span>`);
+            htmlContent = htmlContent.replace(/Bắt buộc thực hiện (.*?) sau khi soạn thảo./g, (match) => 
+                `<span class="text-orange-600 font-bold">${match}</span>`
+            ); 
+
+            return htmlContent;
+        }
+        
+        // Logic hiển thị Sticky Header
+        window.onscroll = function() {
+            const stickyHeader = document.getElementById('sticky-header');
+            if (window.scrollY > 150) { 
+                stickyHeader.classList.remove('hidden');
+                stickyHeader.style.opacity = '1';
+            } else {
+                stickyHeader.style.opacity = '0';
+                setTimeout(() => { stickyHeader.classList.add('hidden'); }, 300);
+            }
+        };
+
+        // ----------------------------------------------------------------------
+        // KHỞI TẠO
+        // ----------------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            if (Object.keys(firebaseConfig).length > 0) {
+                 initializeFirebase();
+            } else {
+                 console.log("Sử dụng chế độ chạy cục bộ (local). Bỏ qua kết nối Firebase.");
+                 document.getElementById('data-status').textContent = '⚠️ Đang chạy ở chế độ cục bộ. Danh mục TTHC là dữ liệu mẫu.';
+                 useStaticDataFallback();
+            }
+            document.getElementById('execute-button').addEventListener('click', generateOptimizedPrompt);
+        });
+    </script>
+</body>
+</html>
